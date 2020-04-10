@@ -4,7 +4,7 @@ local this = {}
 local skillValues = {
     arrow = 0,
     bolt = 5,
-    dart = 10,
+    thrown = 10,
 
     low = 5,
     lowP = 10,
@@ -20,7 +20,7 @@ local skillValues = {
 }
 
 
-this.ammoTypes = {
+local ammoTypes = {
     arrow = {
         handler = "arrows",
         description = "arrows",
@@ -37,15 +37,15 @@ this.ammoTypes = {
     },
     dart = {
         handler = "thrown",
-        description = "darts",
+        description = "dart",
         id = "dart",
         craftCount = 10,
-        skillReq = skillValues.dart
+        skillReq = skillValues.thrown
     }
 }
 
 
-this.materials = {
+local materials = {
     plume = {
         id = "_plume",
         description = "Racer plume",
@@ -65,7 +65,7 @@ this.materials = {
     }
 }
 
-this.enchantments = {
+local enchantments = {
     fire = {
         id = "_fire_01",
         description = "enchanted with fire damage",
@@ -222,6 +222,37 @@ this.enchantments = {
 
 }
 
-
+this.recipes = {
+    plume_arrow = {
+      ammo = ammoTypes.arrow,
+      material = materials.plume,
+      enchantset = enchantments,
+      resultID = ammo.id .. material.id
+    },
+    plume_bolt = {
+      ammo = ammoTypes.bolt,
+      material = materials.plume,
+      enchantset = enchantments,
+      resultID = ammo.id .. material.id
+    },
+    plume_dart = {
+      ammo = ammoTypes.dart,
+      material = materials.plume,
+      enchantset = enchantments,
+      resultID = ammo.id .. material.id
+    },
+    glass_bolt = {
+      ammo = ammoTypes.bolt,
+      material = materials.glass,
+      enchantset = enchantments,
+      resultID = ammo.id .. material.id
+    },
+    glass_dart = {
+      ammo = ammoTypes.dart,
+      material = materials.glass,
+      enchantset = enchantments,
+      resultID = ammo.id .. material.id
+    },
+}
 
 return this

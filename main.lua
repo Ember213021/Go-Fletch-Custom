@@ -80,6 +80,7 @@ local craftButtons = {
     { text = "Arrows", callback = function() crafting.showCraftingMenu({ handler = "arrows" }) end },
     { text = "Bolts", callback = function() crafting.showCraftingMenu({ handler = "bolts" }) end },
     { text = "Throwns", callback = function() crafting.showCraftingMenu({ handler = "thrown" }) end },
+    { text = "Enchant/Poison", callback = function() crafting.showCraftingMenu({ handler = "enchant" }) end}
 }
 
 local pickupButton = { 
@@ -179,8 +180,7 @@ event.register("uiObjectTooltip", fletchTooltip)
 
 local function initialised() 
     local crafting = require("mer.goFletch.crafting.module")
-    local recipes = require("mer.goFletch.recipes")
-	local customrecipes = require("mer.goFletch.recipes_CM")
+    
     ---------------------------------------------------------
     --Handler
     ---------------------------------------------------------
@@ -202,6 +202,12 @@ local function initialised()
         title = "Throwing Weapons Fletching", 
         successSound = "Item Ammo Up",
         --onClose = fetchSelectMessage
+    }
+
+    crafting.registerHandler{
+    	id = "enchant",
+    	title = "Enchant/Poison",
+    	successSound = "Item Ammo Up"
     }
 
     local function registerRecipe(ammo, material, enchantment)
@@ -248,22 +254,8 @@ local function initialised()
         }
     end
 
-	--Custom Recipe Register
-	local function registerCustomRecipe(recipe)
-		
-		local handler = recipe.handler
-        local skill = "fletching"
-        local skillValue = recipe.skillReq
-        local resultID = recipe.id
-        local itemReqs = {}
-		local craftCount = recipe.count
-		local description = recipe.description
-		
-		for _, item in ipairs(recipe.ingredients) do
-            table.insert(itemReqs, item)
-        end
-		
-		crafting.registerRecipe{
+    local function registerRecipe(handler,skill,skillValue,resultID,itemReqs,craftCount,description)
+    	crafting.registerRecipe{
             handler = handler,
             skill = skill,
             description = description,
@@ -281,21 +273,85 @@ local function initialised()
                 tes3.messageBox(message, package.result.count, package.result.item.name )
             end
         }
-	end
-	
-	
-    for _, ammo in pairs(recipes.ammoTypes) do
-        for _, material in pairs(recipes.materials) do
-            registerRecipe(ammo, material)
-            for _, enchantment in pairs(recipes.enchantments) do
-                registerRecipe(ammo, material, enchantment)
-            end
-        end
     end
-	
-	for _,recipe in pairs(customrecipes.recipes) do
-		registerCustomRecipe(recipe)
+
+	--Custom Recipe Register
+	local function registerCustomRecipe(recipe)
+		
+		local handler = recipe.ammo.handler
+        local skill = "fletching"
+        local skillValue = recipe.ammo.skillreq + recipe.material.skillreq
+        local resultID = recipe.material.id .. recipe.ammo.id
+        --resultID Override
+        if recipe.resultID then
+        	resultID = recipe.resultID
+        end
+
+        local itemReqs = {}
+        for _, item in ipairs(recipe.ingredients) do
+            table.insert(itemReqs, item)
+        end
+
+		local craftCount = recipe.ammo.craftCount
+		local description = recipe.material.description .. recipe.ammo.description
+		
+		registerRecipe(handler,skill,skillValue,resultID,itemReqs,craftCount,description)
+
+		--register for each enchantment option
+		for _, enchantment in pairs(recipe.enchantset) do
+			local skillValueEnch = skillValue + enchantment.skillReq
+			local resultIDEnch = resultID .. enchantment.id
+			--Prefix enchant id
+			if enchantment.idPrefix then
+				resultIDEnch = enchantment.id .. resultID
+			end
+
+			--Base item + enchant ingredient
+			local itemReqsEnch = {
+				{ id = resultID , count = craftCount},
+			}
+
+			local descEnch = description .. enchantment.description
+
+			for _, item in ipairs(enchantment.ingredients) do
+            	table.insert(itemReqsEnch, item)
+        	end
+
+            registerRecipe("enchant", skill,skillValueEnch,resultIDEnch,itemReqsEnch,craftCount,descEnch)
+        end
+		
+		
 	end
+	
+	--Register Standard Recipes
+	--local function registerStandardRecipes(recipes)
+	--	
+    --	for _, ammo in pairs(recipes.ammoTypes) do
+    --    	for _, material in pairs(recipes.materials) do
+     --       	registerRecipe(ammo, material)
+     --       	for _, enchantment in pairs(recipes.enchantments) do
+     --           	registerRecipe(ammo, material, enchantment)
+     ---       	end
+     --   	end
+    --	end
+	--end
+	
+	--Register Custom Recipes
+	local function registerCustomRecipes(recipes)
+		for _,recipe in pairs(customrecipes.recipes) do
+			registerCustomRecipe(recipe)
+		end
+	end
+
+	--Call Register Recipes
+	local recipes = require("mer.goFletch.recipes")
+	local recipes_CM = require("mer.goFletch.recipes_CM")
+
+	registerCustomRecipes(recipes)
+	registerCustomRecipes(recipes_CM)
+	
+
+	
 end
 
 event.register("initialized", initialised)
